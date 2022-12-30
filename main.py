@@ -2,7 +2,6 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 from soupsieve import select_one
-import googlecalendarAPI
 
 
 
@@ -38,8 +37,11 @@ with open("links.txt" , "r") as openfileobj:
 
 ## iterate through the links and do stuff
 for link in links:
+    ##clear the lections list
+    lections = []   
     ## get the webpage
     r = requests.get(link)
+    print(link)
 
     ## get the html into soup, get the timetable of the lections
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -61,9 +63,11 @@ for link in links:
         end = time[-5:]
 
         ## if lections arent expired, append them to the list
-        if ((today.month == month) and (today.day <= day)) or (today.month < month):
+        if ((today.month == month) and (today.day <= day)) or (today.month < month) or (today.year == 2022):
             lections.append( Lection(int(day), int(month), start, end, place))
 
-
-    for obj in lections:
-        print(obj.day, obj.month, obj.start, obj.end, obj.place)
+    print(title)
+    ##for obj in lections:
+    ##    print(obj.day, obj.month, obj.start, obj.end, obj.place)
+    print(len(lections))
+   
