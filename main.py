@@ -2,9 +2,18 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 from soupsieve import select_one
+from collections import defaultdict
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.pdfgen.canvas import Canvas
+
+# create a PDF with A4 size
+pdf_file = "calendar.pdf"
+canvas = Canvas(pdf_file, pagesize=A4)
 
 
-
+# create a dictionary to store the lections by date
+calendar = defaultdict(list)
 
 ## class and list for lections, links list
 class Lection:
@@ -41,7 +50,6 @@ for link in links:
     lections = []   
     ## get the webpage
     r = requests.get(link)
-    print(link)
 
     ## get the html into soup, get the timetable of the lections
     soup = BeautifulSoup(r.content, 'html.parser')
@@ -62,12 +70,46 @@ for link in links:
         start = time[ 0 : 5]
         end = time[-5:]
 
-        ## if lections arent expired, append them to the list
-        if ((today.month == month) and (today.day <= day)) or (today.month < month) or (today.year == 2022):
-            lections.append( Lection(int(day), int(month), start, end, place))
+        ## if lections arent expired, append them to the calendar
+        if ((today.month == month) and (today.day <= day)) or (today.month < month):
+            calendar[(day, month)].append((start, end, title, place))
 
-    print(title)
-    ##for obj in lections:
-    ##    print(obj.day, obj.month, obj.start, obj.end, obj.place)
-    print(len(lections))
-   
+
+
+
+
+
+
+
+##                            PDF STUFF
+
+# set the initial position for the text
+x = 2*cm
+y = 27*cm
+
+# iterate through the calendar data and add it to the PDF
+for date, lections in sorted(calendar.items(), key=lambda x: (x[0][1], x[0][0])):
+    day, month = date
+    canvas.setFont("Helvetica-Bold", 14)
+    canvas.drawCentredString(x+8*cm, y, f"{day}/{month}")
+    y -= 1*cm
+    canvas.setFont("Helvetica", 11)
+
+    for lection in sorted(lections, key=lambda x: (x[0], x[1])):
+        start, end, title, place = lection
+        canvas.drawString(x, y, f"  {start} - {end}, {title}, {place}")
+        y -= 0.5*cm
+
+         # if the y position is less than the bottom margin, start a new page
+        if y < 2*cm:
+            canvas.showPage()
+            y = 27*cm
+
+    y -= 1*cm
+
+
+
+# save the PDF
+canvas.save()
+
+print('Finished!')
